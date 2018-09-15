@@ -89,10 +89,14 @@ class Morpher:
         self.triangulations = []
         for i in range(self.k):
             # print(len(self.inter_points[i]))
+            # print(len(self.inter_points[i][0]))
             # print(len(self.inter_points[i][0].shape))
             tri = Delaunay(self.inter_points[i])
             self.triangulations.append(tri)
-            
+
+            # Use this link for Barycentric coordinates and effine transform
+            # https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.spatial.Delaunay.html
+
 
             
 
