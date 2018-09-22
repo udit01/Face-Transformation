@@ -2,15 +2,19 @@ import cv2
 from scipy.spatial import Delaunay
 import numpy as np
 import argparse
+import itertools
 class Morpher:
 
-    def __init__(self, k):
+    def __init__(self, w):
         self.init_lists()
-        self.k = k
+        self.w = w
+        self.k = 1
 
     def loadImages(self, path1, path2):
         self.image1 = cv2.imread(path1)
         self.image2 = cv2.imread(path2)
+        self.image1_unmod = cv2.imread(path1)
+        self.image2_unmod = cv2.imread(path2)
         self.i1Shape = self.image1.shape
         self.i2Shape = self.image2.shape
     
@@ -30,8 +34,8 @@ class Morpher:
         cv2.destroyAllWindows()
         self.extendLists()
         self.printLists()
-        self.constructIntermediateLists()
-        self.constructIntermediateImages()
+        # self.constructIntermediateLists()
+        self.constructIntermediateImage()
     
     def init_lists(self):
         self.list1 = []
@@ -61,12 +65,12 @@ class Morpher:
         self.list1.append((0, 0))
         self.list1.append((0, self.i1Shape[1]))
         self.list1.append((self.i1Shape[0], 0))
-        self.list1.append((0, self.i1Shape[1]))
+        self.list1.append((self.i1Shape[0], self.i1Shape[1]))
 
         self.list2.append((0, 0))
         self.list2.append((0, self.i2Shape[1]))
         self.list2.append((self.i2Shape[0], 0))
-        self.list2.append((0, self.i2Shape[1]))
+        self.list2.append((self.i2Shape[0], self.i2Shape[1]))
 
         self.len = self.len + 4
 
@@ -92,13 +96,46 @@ class Morpher:
             # print(len(self.inter_points[i][0]))
             # print(len(self.inter_points[i][0].shape))
             tri = Delaunay(self.inter_points[i])
+            # print(points[tri.simplices])
             self.triangulations.append(tri)
 
             # Use this link for Barycentric coordinates and effine transform
             # https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.spatial.Delaunay.html
 
+    def barycentric_coordinates(self, coordinates, triangle_numbers):
+        bary_coord = []
+        for i in range(len(triangle_numbers)):
+            b = list(self.tri.transform[triangle_numbers[i],:2].dot(coordinates[i]-self.tri.transform[triangle_numbers[i],2]))
+            b.append(1.0 - sum(b))
+            bary_coord.append(b)
+        return bary_coord
 
-            
+    def constructIntermediateImage(self):
+        w1 = 1.0/(1.0 + self.w)
+        w2 = self.w/(1.0 + self.w)
+        myadd = lambda xs,ys: tuple(int(x + y) for x, y in zip(xs, ys))
+        self.inter_image = [myadd(tuple(w1*i for i in x) , tuple(w2*i for i in y)) for x,y in zip(self.list1, self.list2)]
+        print(self.inter_image)
+        self.tri = Delaunay(self.inter_image)
+        # print(tri.simplices)
+        # tri.simplices is a 2d-numpy array kx3 array with indices of points of each simplex in each row
+        m,n = self.inter_image[-1]
+        final_image_coordinates = list(itertools.product(range(m),range(n)))
+        p = self.tri.find_simplex(final_image_coordinates)
+        bary_coordinates = self.barycentric_coordinates(final_image_coordinates, p)
+        simplices = self.tri.simplices
+        final_image = np.zeros((m,n,3))
+        for i in range(m):
+            for j in range(n):
+                triangle_number = p[i*n+j]
+                corner_points = simplices[triangle_number]
+                barycentric = bary_coordinates[i*n+j]
+                p1 = myadd(myadd(tuple(x*barycentric[0] for x in self.list1[corner_points[0]]),tuple(x*barycentric[1] for x in self.list1[corner_points[1]])),tuple(x*barycentric[2] for x in self.list1[corner_points[2]]))
+                p2 = myadd(myadd(tuple(x*barycentric[0] for x in self.list2[corner_points[0]]),tuple(x*barycentric[1] for x in self.list2[corner_points[1]])),tuple(x*barycentric[2] for x in self.list2[corner_points[2]]))
+                final_image[i,j] = [int(x) for x in self.image1_unmod[p1]*w1 + self.image2_unmod[p2]*w2]
+        # Now p has the triangle number for each of the pixels
+        cv2.imwrite('final.png',final_image)
+
 
     def showTriangulation(self):
         pass
@@ -118,11 +155,11 @@ if __name__ == "__main__" :
     parser = argparse.ArgumentParser(description='Morph some images')
     parser.add_argument('-i1', dest='i1path', help='The image 1 path', required = True, type=str)
     parser.add_argument('-i2', dest='i2path', help='The image 2 path', required = True, type=str)
-    parser.add_argument('-k', dest='k', help='Morphing through k frames', required = True, type=int, default=1)
-
+    # parser.add_argument('-k', dest='k', help='Morphing through k frames', required = True, type=int, default=1)
+    parser.add_argument('-w', dest='w',help='Weight of image2 compared to image1', required=True,type=int,default=1)
     args = parser.parse_args()
 
-    morpher = Morpher(args.k)
+    morpher = Morpher(args.w)
     morpher.loadImages(args.i1path, args.i2path)
     morpher.loadWindows()
 
