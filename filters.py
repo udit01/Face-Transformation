@@ -15,7 +15,7 @@ class Filter:
         self.i1Shape = self.image1.shape
     
     def loadWindows(self):
-        self.w1 = 'Mark Tranformation Points'
+        self.w1 = 'Mark Tranformation Points for filter number'
 
         cv2.namedWindow(self.w1, cv2.WINDOW_NORMAL)
 
@@ -32,11 +32,29 @@ class Filter:
         self.constructFilteredImage(self.idx)
     
     def constructFilteredImage(self, index)
+        
         pass
 
     def init_lists(self):
         self.list1 = []
     
+    def loadFilters(self, dir='./filters/'):
+        self.filters = []
+        self.filter_paths = []
+        
+        #These are the 3 hot points for effine tranform for each filters
+        self.points = []
+
+        for (dirpath, dirnames, filenames) in os.walk(dir):
+            for filename in filenames:
+                if filename.endswith('.png'): 
+                    self.filter_paths.append(os.sep.join([dirpath, filename]))
+
+        for image_path in self.filter_paths:
+            image = cv2.imread(image_path)
+            self.filters.append(image)
+        
+
     def getPointsImage1(self, event, x, y, params, flags):
         if event == cv2.EVENT_LBUTTONDOWN:
             self.list1.append((y,x))    # because x is column and y is row
@@ -135,10 +153,13 @@ if __name__ == "__main__" :
 
     parser = argparse.ArgumentParser(description='Morph some images')
     parser.add_argument('-i', dest='ipath', help='The image path', required = True, type=str)
+    parser.add_argument('-fp', dest='fp', help='The filter paths', default = './filters/', required = True, type=str)
+    parser.add_argument('-n', dest='num', help='The filter number', default = 0, required = True, type=int)
     args = parser.parse_args()
 
-    fil = Filter(args)
+    fil = Filter(args.num)
     fil.loadImages(args.ipath)
+    fil.loadFilters(args.fp)
     fil.loadWindows()
 
     
