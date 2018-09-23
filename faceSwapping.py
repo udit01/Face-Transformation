@@ -119,6 +119,10 @@ class Swapper:
         bary_coordinates = self.barycentric_coordinates(final_image_coordinates, p)
         simplices = self.tri.simplices
         int_image1 = np.zeros((m,n,3))
+        top_pixel = np.zeros((m,n,3))
+        right_pixel = np.zeros((m,n,3))
+        down_pixel = np.zeros((m,n,3))
+        left_pixel = np.zeros((m,n,3))
         for i in range(m):
             for j in range(n):
                 triangle_number = p[i*n+j]
@@ -129,6 +133,10 @@ class Swapper:
                 barycentric = bary_coordinates[i*n+j]
                 p1 = myadd(myadd(tuple(x*barycentric[0] for x in self.list1[corner_points[0]]),tuple(x*barycentric[1] for x in self.list1[corner_points[1]])),tuple(x*barycentric[2] for x in self.list1[corner_points[2]]))
                 int_image1[i,j] = self.image1_unmod[p1]
+                top_pixel[i,j] = self.image1_unmod[(p1[0]-1,p1[1])]
+                right_pixel[i,j] = self.image1_unmod[(p1[0],p1[1]+1)]
+                down_pixel[i,j] = self.image1_unmod[(p1[0]+1,p1[1])]
+                left_pixel[i,j] = self.image1_unmod[(p1[0],p1[1]-1)]
         # Now p has the triangle number for each of the pixels
         grad_x = cv2.Sobel(int_image1,cv2.CV_8U,1,0)  
         grad_y = cv2.Sobel(int_image1,cv2.CV_8U,0,1)
@@ -147,13 +155,24 @@ class Swapper:
                 column_indices.append(interior_points[(i,j)])
                 data.append(4)
                 right = np.zeros(3)
+                count = 0
                 for neighbor in [(i+1,j),(i-1,j), (i,j+1), (i,j-1)]:
+                    count += 1
                     if self.inside[neighbor[0]*n+neighbor[1]] >= 0:
                         row_indices.append(interior_points[(i,j)])
                         column_indices.append(interior_points[neighbor])
                         data.append(-1)
                     elif self.in_delta_omega(neighbor):
                         right += self.image2_unmod[neighbor]
+                        if count == 1:
+                            right += int_image1[i,j] - down_pixel[i,j]
+                        if count == 2:
+                            right += int_image1[i,j] - top_pixel[i,j]
+                        if count == 3:
+                            right += int_image1[i,j] - right_pixel[i,j]
+                        if count == 4:
+                            right += int_image1[i,j] - left_pixel[i,j]
+                        continue
                     right += int_image1[i,j] - int_image1[neighbor]
                 right_r.append(right[0])
                 right_g.append(right[1])
@@ -176,7 +195,6 @@ class Swapper:
             for j in range(n):
                 if self.inside[i*n + j] < 0:
                     continue
-                print("Change")
                 int_image1[i,j][0] = f_r[interior_points[(i,j)]]
                 int_image1[i,j][1] = f_g[interior_points[(i,j)]]
                 int_image1[i,j][2] = f_b[interior_points[(i,j)]]
