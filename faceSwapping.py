@@ -2,17 +2,20 @@ import cv2
 import numpy as np
 import argparse
 from scipy.spatial import Delaunay
+from scipy.sparse.linalg import spsolve
+from scipy import sparse
 import itertools
+
 
 class Swapper:
 
     def __init__(self):
         self.init_lists()
-    
+
     def init_lists(self):
         self.list1 = []
         self.list2 = []
-    
+
     def loadImages(self, path1, path2):
         self.image1 = cv2.imread(path1)
         self.image2 = cv2.imread(path2)
@@ -30,18 +33,19 @@ class Swapper:
         cv2.setMouseCallback(self.w2, self.getPointsImage2)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
-        self.constructIntermediateImage()
+        # self.constructIntermediateImage()
+        self.constructIntermediateImageBlending()
     
     def getPointsImage1(self, event, x, y, params, flags):
         if event == cv2.EVENT_LBUTTONDOWN:
-            self.list1.append((y,x))    # because x is column and y is row
-            cv2.circle(self.image1, (x,y), 3, (0,255,0), 3)
+            self.list1.append((y, x))    # because x is column and y is row
+            cv2.circle(self.image1, (x, y), 3, (0, 255, 0), 3)
             cv2.imshow(self.w1, self.image1)
 
     def getPointsImage2(self, event, x, y, params, flags):
         if event == cv2.EVENT_LBUTTONDOWN:
-            self.list2.append((y,x))
-            cv2.circle(self.image2, (x,y), 3, (0,0,255), 3)
+            self.list2.append((y, x))
+            cv2.circle(self.image2, (x, y), 3, (0, 0, 255), 3)
             cv2.imshow(self.w2, self.image2)
     
     def barycentric_coordinates(self, coordinates, triangle_numbers):
@@ -51,6 +55,13 @@ class Swapper:
             b.append(1.0 - sum(b))
             bary_coord.append(b)
         return bary_coord
+
+    def in_delta_omega(self,pixel):
+        x,y = pixel
+        m,n,_ = self.i2Shape
+        if self.inside[x*n + y] < 0 and (self.inside[(x+1)*n + y] >= 0 or self.inside[x*n+y+1] >= 0 or self.inside[(x-1)*n+y] >= 0 or self.inside[x*n+y-1] >= 0):
+            return True
+    
 
     def constructIntermediateImage(self):
         myadd = lambda xs,ys: tuple(int(x + y) for x, y in zip(xs, ys))
@@ -91,6 +102,13 @@ class Swapper:
         print((m,n))
         final_image_coordinates = list(itertools.product(range(m),range(n)))
         p = self.tri.find_simplex(final_image_coordinates)
+        self.inside = p
+        # Blending
+        """
+        if p[k] is >= 0 then k belongs to Omega
+        |N_p| = 4
+        q \in N_p AND Omega 
+        """
         interior_points = {}
         count = 0
         for i in range(m):
@@ -98,8 +116,6 @@ class Swapper:
                 if p[i*n + j] >= 0:
                     interior_points[(i,j)] = count
                     count += 1
-        A = []
-        b = []
         bary_coordinates = self.barycentric_coordinates(final_image_coordinates, p)
         simplices = self.tri.simplices
         int_image1 = np.zeros((m,n,3))
@@ -114,16 +130,57 @@ class Swapper:
                 p1 = myadd(myadd(tuple(x*barycentric[0] for x in self.list1[corner_points[0]]),tuple(x*barycentric[1] for x in self.list1[corner_points[1]])),tuple(x*barycentric[2] for x in self.list1[corner_points[2]]))
                 int_image1[i,j] = self.image1_unmod[p1]
         # Now p has the triangle number for each of the pixels
-        border = lambda tup : True if (p[(tup[0]+1)*n + tup[1]] < 0 or p[(tup[0]-1)*n+tup[1]] < 0 or p[tup[0]*n + tup[1]+1] < 0 or p[tup[0]*n + tup[1]-1] < 0) else False
+        grad_x = cv2.Sobel(int_image1,cv2.CV_8U,1,0)  
+        grad_y = cv2.Sobel(int_image1,cv2.CV_8U,0,1)
+        row_indices = []
+        column_indices = []
+        data = []
+        right_r = []
+        right_g = []
+        right_b = []
         for i in range(m):
             for j in range(n):
-                if p[i*n + j] < 0:
-                    l = [0*len(interior_points)]
-                    l[interior_points[(i,j)]] = 4
-
+                triangle_number = p[i*n + j]
+                if triangle_number < 0:
+                    continue
+                row_indices.append(interior_points[(i,j)])
+                column_indices.append(interior_points[(i,j)])
+                data.append(4)
+                right = np.zeros(3)
+                for neighbor in [(i+1,j),(i-1,j), (i,j+1), (i,j-1)]:
+                    if self.inside[neighbor[0]*n+neighbor[1]] >= 0:
+                        row_indices.append(interior_points[(i,j)])
+                        column_indices.append(interior_points[neighbor])
+                        data.append(-1)
+                    elif self.in_delta_omega(neighbor):
+                        right += self.image2_unmod[neighbor]
+                    right += int_image1[i,j] - int_image1[neighbor]
+                right_r.append(right[0])
+                right_g.append(right[1])
+                right_b.append(right[2])
+        print("Start")
+        A = sparse.csr_matrix((data,(row_indices, column_indices)),shape=(len(interior_points),len(interior_points)))
+        b_r = np.array(right_r)
+        b_g = np.array(right_g)
+        b_b = np.array(right_b)
+        f_r = spsolve(A,b_r)
+        print("Done1")
+        f_g = spsolve(A,b_g)
+        print("Done2")
+        f_b = spsolve(A,b_b)
+        print("Done3")
+        print(len(interior_points))
         # cv2.imwrite('final.png',final_image)
-
-
+        cv2.imwrite('before_change_swap.png', int_image1)
+        for i in range(m):
+            for j in range(n):
+                if self.inside[i*n + j] < 0:
+                    continue
+                print("Change")
+                int_image1[i,j][0] = f_r[interior_points[(i,j)]]
+                int_image1[i,j][1] = f_g[interior_points[(i,j)]]
+                int_image1[i,j][2] = f_b[interior_points[(i,j)]]
+        cv2.imwrite('final_swap.png', int_image1)
 
 
 if __name__ == "__main__" :
