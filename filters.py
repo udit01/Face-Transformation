@@ -1,3 +1,4 @@
+import os
 import cv2
 from scipy.spatial import Delaunay
 import numpy as np
@@ -24,17 +25,16 @@ class Filter:
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-        self.extendLists()
         self.printLists()
 
-        self.constructFilteredImage(0)
+        # self.constructFilteredImage(0)
     
-    def constructFilteredImage(self, idx)
+    def constructFilteredImage(self, idx):
         
         # Transform self.filters(idx) with cv2.effine tranform,
-        B = np.array(self.image1, dtype=np.float) 
+        B = np.array(self.image1_unmod, dtype=np.float) 
 
-        rows,cols,ch = self.image1.shape
+        rows,cols,ch = self.image1_unmod.shape
 
         # get from points array and marked things
         # p_1 = self.points[3*idx + 0]
@@ -50,12 +50,14 @@ class Filter:
         # pts2 = np.float32([ target_p_1, target_p_2 , target_p_3 ])
 
         pts1 = np.float32(self.points[ 3*idx : 3*(idx+1) ])
-        pts2 = np.float32(self.list1[ 0 : 3 ])
+        pts2 = np.float32(self.list1[ 0 : 3 ]) # target points
 
         M = cv2.getAffineTransform(pts1,pts2)
 
         # will extract view of (cols, rows)
         A = cv2.warpAffine(self.filters[idx], M, (cols,rows))
+
+        self.writeAndShow(A, 'ToungeWarped.png')
 
         alpha = self.alphas[idx]
 
@@ -69,17 +71,21 @@ class Filter:
         output = (A * alpha) + (B * (1-alpha))
         # output = (A * alpha) + (B)
 
-        cv2.imwrite('filter_'+idx+'.png' , output)
+        self.writeAndShow(output, 'filter_'+str(idx)+'.png')
 
-        cv2.imshow('OUTPUT WITH FILTER '+ idx, output)
+
+    def writeAndShow(self, img, name='a.png'):
+
+        cv2.imwrite(name , img)
+
+        cv2.imshow(name, img)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
-
 
     def init_lists(self):
         self.list1 = []
     
-    def loadFilters(self, dir='./filters/'):
+    def loadFilters(self, dir='filters/'):
         self.filters = []
         self.filter_paths = []
         
@@ -90,10 +96,13 @@ class Filter:
         # # you may also want to remove whitespace characters like `\n` at the end of each line
         # content = [x.strip() for x in content]  
 
-        for (dirpath, dirnames, filenames) in os.walk(dir):
-            for filename in filenames:
-                if filename.endswith('.png'): 
-                    self.filter_paths.append(os.sep.join([dirpath, filename]))
+        # for (dirpath, dirnames, filenames) in os.walk(dir):
+        #     for filename in filenames:
+        #         if filename.endswith('.png'): 
+        #             self.filter_paths.append(os.sep.join([dirpath, filename]))
+
+        for i in range(7):
+            self.filter_paths.append(os.path.join(dir, str(i)+'.png' ))
 
         for image_path in self.filter_paths:
             image = cv2.imread(image_path)
@@ -108,16 +117,22 @@ class Filter:
         self.points = []
         self.alphas = []
 
+        # Got from https://www.mobilefish.com/services/record_mouse_coordinates/record_mouse_coordinates.php
+        # inverted x and y to get row and col
         # 3 points & 1 alpha for 0.png
-        self.points.append((0,5)) 
-        self.points.append((0,5)) 
-        self.points.append((0,5)) 
+        self.points.append([40, 60]) # left eye center
+        self.points.append([40, 185]) # right eye center 
+        self.points.append([20, 120]) # center of spects
 
-        self.alphas.append(0.9)
+        self.alphas.append(0.5)
         # have a map or number for opacity
 
-        # 3 points & 1 alpha for 0.png
+        # 3 points & 1 alpha for 1.png
+        self.points.append([35, 95]) # Top center
+        self.points.append([164, 3]) # Leftmost 
+        self.points.append([170, 194]) # RightMost
 
+        self.alphas.append(0.5)
 
     def getPointsImage1(self, event, x, y, params, flags):
         if event == cv2.EVENT_LBUTTONDOWN:
@@ -145,10 +160,11 @@ if __name__ == "__main__" :
     parser.add_argument('-n', dest='num', help='The filter number', default = 0, required = True, type=int)
     args = parser.parse_args()
 
-    fil = Filter(args.num)
+    fil = Filter()
     fil.loadImages(args.ipath)
     fil.loadFilters(args.fp)
     fil.loadWindows()
+    fil.constructFilteredImage(1)
 
     
     
