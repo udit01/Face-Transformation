@@ -17,10 +17,10 @@ def read_transparent_png(filename):
     alpha_factor = alpha_channel[:,:,np.newaxis].astype(np.float32) / 255.0
     alpha_factor = np.concatenate((alpha_factor,alpha_factor,alpha_factor), axis=2)
 
-    # Transparent Image Rendered on White Background
+    # Transparent Image Rendered on black Background
     base = rgb_channels.astype(np.float32) * alpha_factor
-    white = black_background_image.astype(np.float32) * (1 - alpha_factor)
-    final_image = base + white
+    black = black_background_image.astype(np.float32) * (1 - alpha_factor)
+    final_image = base + black
     return final_image.astype(np.uint8)    
 
 
@@ -89,11 +89,28 @@ class Filter:
 
         # A is foreground, B is background
         # smartly adding with alpha channel (modification in read_transparent func) ?
-        output = (A * alpha) + (B * (1-alpha))
+        # print(A[0][0])
+        output = self.overlay(A, alpha, B)
+        # output = (A * alpha) + (B * (1-alpha))
         # output = (A * alpha) + (B)
         
         self.writeAndShow(output, 'filter_'+str(idx)+'.png')
 
+    def overlay(self, A, alpha, B):
+        output = np.zeros_like(B)
+        row, col, ch = output.shape
+        A = A.astype(np.float32)
+        B = B.astype(np.float32)
+        
+        for r in range(row):
+            for c in range(col):
+                if ((A[r][c] == np.array([0, 0, 0])).all()):
+                    output[r][c] = B[r][c]
+                else:
+                    o = np.add(  np.multiply(alpha,A[r][c]), np.multiply((1-alpha),B[r][c])  )
+                    output[r][c] = o.astype(np.int)
+        
+        return output
 
     def writeAndShow(self, img, name='a.png'):
 
@@ -150,11 +167,18 @@ class Filter:
         # have a map or number for opacity
 
         # 3 points & 1 alpha for 1.png "Tongue"
-        self.points.append([35, 95]) # Top center
-        self.points.append([164, 3]) # Leftmost 
-        self.points.append([170, 194]) # RightMost
+        # self.points.append([35, 95]) # Top center
+        # self.points.append([164, 3]) # Leftmost 
+        # self.points.append([170, 194]) # RightMost
 
-        self.alphas.append(0.5)
+        # self.alphas.append(0.5)
+        # reversed x and y
+        self.points.append([95, 35]) # Top center
+        self.points.append([3, 164]) # Leftmost 
+        self.points.append([194, 160]) # RightMost
+
+        self.alphas.append(0.95)
+
 
 
         # 3 points & 1 alpha for 2.png "Mustache" 
@@ -183,7 +207,7 @@ class Filter:
 
     def getPointsImage1(self, event, x, y, params, flags):
         if event == cv2.EVENT_LBUTTONDOWN:
-            self.list1.append((y,x))    # because x is column and y is row
+            self.list1.append([x,y])    # because x is column and y is row
             cv2.circle(self.image1, (x,y), 3, (0,255,0), 3)
             cv2.imshow(self.w1, self.image1)
 
