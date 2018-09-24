@@ -101,7 +101,7 @@ class Filter:
         #         if filename.endswith('.png'): 
         #             self.filter_paths.append(os.sep.join([dirpath, filename]))
 
-        for i in range(7):
+        for i in range(5):
             self.filter_paths.append(os.path.join(dir, str(i)+'.png' ))
 
         for image_path in self.filter_paths:
@@ -119,7 +119,8 @@ class Filter:
 
         # Got from https://www.mobilefish.com/services/record_mouse_coordinates/record_mouse_coordinates.php
         # inverted x and y to get row and col
-        # 3 points & 1 alpha for 0.png
+        
+        # 3 points & 1 alpha for 0.png "Specs"
         self.points.append([40, 60]) # left eye center
         self.points.append([40, 185]) # right eye center 
         self.points.append([20, 120]) # center of spects
@@ -127,12 +128,37 @@ class Filter:
         self.alphas.append(0.5)
         # have a map or number for opacity
 
-        # 3 points & 1 alpha for 1.png
+        # 3 points & 1 alpha for 1.png "Tongue"
         self.points.append([35, 95]) # Top center
         self.points.append([164, 3]) # Leftmost 
         self.points.append([170, 194]) # RightMost
 
         self.alphas.append(0.5)
+
+
+        # 3 points & 1 alpha for 2.png "Mustache" 
+        self.points.append([29, 328]) # Leftmost
+        self.points.append([24, 93]) # Middle 
+        self.points.append([28, 184]) # RightMost
+
+        self.alphas.append(0.5)
+
+
+        # 3 points & 1 alpha for 3.png # "Hat"
+        self.points.append([9, 117]) # Top Center
+        self.points.append([94, 2]) # Leftmost
+        self.points.append([94, 233]) # RightMost
+
+        self.alphas.append(0.5)
+
+
+        # 3 points & 1 alpha for 4.png #"Dog-nose"
+        self.points.append([74, 2]) # Leftmost
+        self.points.append([39, 91]) # Middle 
+        self.points.append([76, 185]) # RightMost
+
+        self.alphas.append(0.5)
+
 
     def getPointsImage1(self, event, x, y, params, flags):
         if event == cv2.EVENT_LBUTTONDOWN:
@@ -164,7 +190,7 @@ if __name__ == "__main__" :
     fil.loadImages(args.ipath)
     fil.loadFilters(args.fp)
     fil.loadWindows()
-    fil.constructFilteredImage(1)
+    fil.constructFilteredImage(args.num)
 
     
     
