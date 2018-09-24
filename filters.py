@@ -4,6 +4,26 @@ from scipy.spatial import Delaunay
 import numpy as np
 import argparse
 import itertools
+
+def read_transparent_png(filename):
+    image_4channel = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
+    alpha_channel = image_4channel[:,:,3]
+    rgb_channels = image_4channel[:,:,:3]
+
+    # Black Background Image
+    black_background_image = np.zeros_like(rgb_channels, dtype=np.uint8) * 255
+
+    # Alpha factor
+    alpha_factor = alpha_channel[:,:,np.newaxis].astype(np.float32) / 255.0
+    alpha_factor = np.concatenate((alpha_factor,alpha_factor,alpha_factor), axis=2)
+
+    # Transparent Image Rendered on White Background
+    base = rgb_channels.astype(np.float32) * alpha_factor
+    white = black_background_image.astype(np.float32) * (1 - alpha_factor)
+    final_image = base + white
+    return final_image.astype(np.uint8)    
+
+
 class Filter:
 
     def __init__(self):
@@ -70,7 +90,7 @@ class Filter:
         # A is foreground, B is background
         output = (A * alpha) + (B * (1-alpha))
         # output = (A * alpha) + (B)
-
+        
         self.writeAndShow(output, 'filter_'+str(idx)+'.png')
 
 
@@ -105,7 +125,7 @@ class Filter:
             self.filter_paths.append(os.path.join(dir, str(i)+'.png' ))
 
         for image_path in self.filter_paths:
-            image = cv2.imread(image_path)
+            image = read_transparent_png(image_path)
             self.filters.append(image)
 
         # Filters, points and alpha's loaded
@@ -119,7 +139,7 @@ class Filter:
 
         # Got from https://www.mobilefish.com/services/record_mouse_coordinates/record_mouse_coordinates.php
         # inverted x and y to get row and col
-        
+
         # 3 points & 1 alpha for 0.png "Specs"
         self.points.append([40, 60]) # left eye center
         self.points.append([40, 185]) # right eye center 
@@ -193,4 +213,16 @@ if __name__ == "__main__" :
     fil.constructFilteredImage(args.num)
 
     
-    
+###
+# import cv2
+# img = cv2.imread('filters/1.png', cv2.IMREAD_UNCHANGED)
+# img2 = cv2.imread('filters/1.png')
+
+# cv2.imshow("1", img)
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
+
+
+# cv2.imshow("2", img)
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
