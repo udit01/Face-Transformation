@@ -156,14 +156,15 @@ class Filter:
         self.alphas = []
 
         # Got from https://www.mobilefish.com/services/record_mouse_coordinates/record_mouse_coordinates.php
-        # inverted x and y to get row and col
+        # didn't x and y 
+        # to  not? get row and col
 
         # 3 points & 1 alpha for 0.png "Specs"
-        self.points.append([40, 60]) # left eye center
-        self.points.append([40, 185]) # right eye center 
-        self.points.append([20, 120]) # center of spects
+        self.points.append([60, 40]) # left eye center
+        self.points.append([185,40]) # right eye center 
+        self.points.append([120, 20]) # center of spects
 
-        self.alphas.append(0.5)
+        self.alphas.append(0.95)
         # have a map or number for opacity
 
         # 3 points & 1 alpha for 1.png "Tongue"
@@ -182,27 +183,27 @@ class Filter:
 
 
         # 3 points & 1 alpha for 2.png "Mustache" 
-        self.points.append([29, 328]) # Leftmost
-        self.points.append([24, 93]) # Middle 
-        self.points.append([28, 184]) # RightMost
+        self.points.append([328, 29]) # Leftmost
+        self.points.append([93, 24]) # Middle 
+        self.points.append([184,28]) # RightMost
 
-        self.alphas.append(0.5)
+        self.alphas.append(0.99)
 
 
         # 3 points & 1 alpha for 3.png # "Hat"
-        self.points.append([9, 117]) # Top Center
-        self.points.append([94, 2]) # Leftmost
-        self.points.append([94, 233]) # RightMost
+        self.points.append([117, 9]) # Top Center
+        self.points.append([2, 94]) # Leftmost
+        self.points.append([233, 94]) # RightMost
 
-        self.alphas.append(0.5)
+        self.alphas.append(0.99)
 
 
         # 3 points & 1 alpha for 4.png #"Dog-nose"
-        self.points.append([74, 2]) # Leftmost
-        self.points.append([39, 91]) # Middle 
-        self.points.append([76, 185]) # RightMost
+        self.points.append([2, 74]) # Leftmost
+        self.points.append([91, 39]) # Middle 
+        self.points.append([185, 76]) # RightMost
 
-        self.alphas.append(0.5)
+        self.alphas.append(0.99)
 
 
     def getPointsImage1(self, event, x, y, params, flags):
