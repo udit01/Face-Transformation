@@ -88,6 +88,7 @@ class Filter:
         # background[250:250+rows, 0:0+cols ] = overlay
 
         # A is foreground, B is background
+        # smartly adding with alpha channel (modification in read_transparent func) ?
         output = (A * alpha) + (B * (1-alpha))
         # output = (A * alpha) + (B)
         
