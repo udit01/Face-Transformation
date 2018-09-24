@@ -33,6 +33,8 @@ class Filter:
     
     def constructFilteredImage(self, index)
         
+        # Transform self.filters(idx) with cv2.effine tranform, 
+
         pass
 
     def init_lists(self):
@@ -42,8 +44,12 @@ class Filter:
         self.filters = []
         self.filter_paths = []
         
-        #These are the 3 hot points for effine tranform for each filters
-        self.points = []
+        self.getPointsAndAplha()
+
+        # with open(dir+'points.txt') as f:
+        #     content = f.readlines()
+        # # you may also want to remove whitespace characters like `\n` at the end of each line
+        # content = [x.strip() for x in content]  
 
         for (dirpath, dirnames, filenames) in os.walk(dir):
             for filename in filenames:
@@ -53,7 +59,26 @@ class Filter:
         for image_path in self.filter_paths:
             image = cv2.imread(image_path)
             self.filters.append(image)
+
+        # Filters, points and alpha's loaded
         
+
+    def getPointsAndAplha(self):
+        
+        #These are the 3 hot points for effine tranform for each filters
+        self.points = []
+        self.alphas = []
+
+        # 3 points & 1 alpha for 0.png
+        self.points.append((0,5)) 
+        self.points.append((0,5)) 
+        self.points.append((0,5)) 
+
+        self.alphas.append(0.9)
+        # have a map or number for opacity
+
+        # 3 points & 1 alpha for 0.png
+
 
     def getPointsImage1(self, event, x, y, params, flags):
         if event == cv2.EVENT_LBUTTONDOWN:
@@ -145,7 +170,14 @@ class Filter:
     #     # plt.show()
 
     def printLists(self):
-        print(self.list1)    
+        print("------------- Current list--------------")
+        print(self.list1)
+        print("------------- Points  list--------------")
+        print(self.points)
+        print("------------- Alphas  list--------------")
+        print(self.alphas)
+        print("------------- ImgPath list--------------")
+        print(self.filter_paths)
 
 
     
