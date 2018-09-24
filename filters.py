@@ -33,7 +33,7 @@ class Filter:
         
         # Transform self.filters(idx) with cv2.effine tranform,
         B = np.array(self.image1_unmod, dtype=np.float) 
-
+        # B /= 255.0 
         rows,cols,ch = self.image1_unmod.shape
 
         # get from points array and marked things
@@ -56,7 +56,7 @@ class Filter:
 
         # will extract view of (cols, rows)
         A = cv2.warpAffine(self.filters[idx], M, (cols,rows))
-
+        # A /= 255.0
         self.writeAndShow(A, 'ToungeWarped.png')
 
         alpha = self.alphas[idx]
