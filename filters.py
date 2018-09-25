@@ -10,9 +10,14 @@ def read_transparent_png(filename):
     alpha_channel = image_4channel[:,:,3]
     rgb_channels = image_4channel[:,:,:3]
 
+    # row,col,ch = rgb_channels.shape
     # Black Background Image
     black_background_image = np.zeros_like(rgb_channels, dtype=np.uint8) * 255
 
+    # for i in range(row):
+    #     for j in range(col):
+    #         rgb_channels[i][j] = np.array([-10, -10, -10])
+    
     # Alpha factor
     alpha_factor = alpha_channel[:,:,np.newaxis].astype(np.float32) / 255.0
     alpha_factor = np.concatenate((alpha_factor,alpha_factor,alpha_factor), axis=2)
@@ -20,6 +25,13 @@ def read_transparent_png(filename):
     # Transparent Image Rendered on black Background
     base = rgb_channels.astype(np.float32) * alpha_factor
     black = black_background_image.astype(np.float32) * (1 - alpha_factor)
+
+    row,col,ch = base.shape
+
+    for i in range(row):
+        for j in range(col):
+            base[i][j] = np.add(base[i][j], np.array([1, 1, 1]))
+    
     final_image = base + black
     return final_image.astype(np.uint8)    
 
@@ -160,9 +172,9 @@ class Filter:
         # to  not? get row and col
 
         # 3 points & 1 alpha for 0.png "Specs"
-        self.points.append([60, 40]) # left eye center
-        self.points.append([185,40]) # right eye center 
-        self.points.append([120, 20]) # center of spects
+        self.points.append([2, 16]) # left eye center
+        self.points.append([124,70]) # right eye center 
+        self.points.append([240, 16]) # center of spects
 
         self.alphas.append(0.95)
         # have a map or number for opacity
