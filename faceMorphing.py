@@ -5,9 +5,9 @@ import argparse
 import itertools
 class Morpher:
 
-    def __init__(self, w):
+    def __init__(self, output):
         self.init_lists()
-        self.w = w
+        self.prefix = output
         self.k = 1
 
     def loadImages(self, path1, path2):
@@ -35,7 +35,9 @@ class Morpher:
         self.extendLists()
         self.printLists()
         # self.constructIntermediateLists()
-        self.constructIntermediateImage()
+        for w in [0.33, 1.00, 3]:
+            self.w = w
+            self.constructIntermediateImage()
     
     def init_lists(self):
         self.list1 = []
@@ -134,7 +136,7 @@ class Morpher:
                 p2 = myadd(myadd(tuple(x*barycentric[0] for x in self.list2[corner_points[0]]),tuple(x*barycentric[1] for x in self.list2[corner_points[1]])),tuple(x*barycentric[2] for x in self.list2[corner_points[2]]))
                 final_image[i,j] = [int(x) for x in self.image1_unmod[p1]*w1 + self.image2_unmod[p2]*w2]
         # Now p has the triangle number for each of the pixels
-        cv2.imwrite('final.png',final_image)
+        cv2.imwrite(self.prefix+'_'+str(self.w)+'.png',final_image)
 
 
     def showTriangulation(self):
@@ -156,10 +158,11 @@ if __name__ == "__main__" :
     parser.add_argument('-i1', dest='i1path', help='The image 1 path', required = True, type=str)
     parser.add_argument('-i2', dest='i2path', help='The image 2 path', required = True, type=str)
     # parser.add_argument('-k', dest='k', help='Morphing through k frames', required = True, type=int, default=1)
-    parser.add_argument('-w', dest='w',help='Weight of image2 compared to image1', required=True,type=int,default=1)
+    # parser.add_argument('-w', dest='w',help='Weight of image2 compared to image1', required=True,type=int,default=1)
+    parser.add_argument('-o', dest='output', help='Output Prefix', required=True, type=str)
     args = parser.parse_args()
 
-    morpher = Morpher(args.w)
+    morpher = Morpher(args.output)
     morpher.loadImages(args.i1path, args.i2path)
     morpher.loadWindows()
 
