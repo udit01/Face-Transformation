@@ -45,7 +45,7 @@ class Filter:
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-        self.printLists()
+        # self.printLists()
 
         # self.constructFilteredImage(0)
     
@@ -77,7 +77,7 @@ class Filter:
         # will extract view of (cols, rows)
         A = cv2.warpAffine(self.filters[idx], M, (cols,rows))
         # A /= 255.0
-        self.writeAndShow(A, 'ToungeWarped.png')
+        self.writeAndShow(A, 'filter_'+str(idx)+'_tranformed.png')
 
         alpha = self.alphas[idx]
 
@@ -116,9 +116,9 @@ class Filter:
 
         cv2.imwrite(name , img)
 
-        cv2.imshow(name, img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        # cv2.imshow(name, img)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
 
     def init_lists(self):
         self.list1 = []
