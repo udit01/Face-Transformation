@@ -1,1 +1,0 @@
-{"dest": "https://www.reddit.com/"}

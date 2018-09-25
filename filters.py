@@ -26,11 +26,11 @@ def read_transparent_png(filename):
     base = rgb_channels.astype(np.float32) * alpha_factor
     black = black_background_image.astype(np.float32) * (1 - alpha_factor)
 
-    row,col,ch = base.shape
+    # row,col,ch = base.shape
 
-    for i in range(row):
-        for j in range(col):
-            base[i][j] = np.add(base[i][j], np.array([1, 1, 1]))
+    # for i in range(row):
+    #     for j in range(col):
+    #         base[i][j] = np.add(base[i][j], np.array([1, 1, 1]))
     
     final_image = base + black
     return final_image.astype(np.uint8)    

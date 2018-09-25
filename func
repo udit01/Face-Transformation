@@ -1,4 +1,0 @@
-pairs of 2 points,
-
-cv2. get affine transform (pair of 3 points each)
-cv2. warp affine 
