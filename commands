@@ -1,0 +1,2 @@
+python3 faceMorphing.py -i1 <image1> -i2 <image2> -o <output>
+python3 faceSwapping.py -i1 <image1> -i2 <image2>
