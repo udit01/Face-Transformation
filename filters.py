@@ -31,7 +31,7 @@ class Filter:
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-        self.printLists()
+        # self.printLists()
 
         # self.constructFilteredImage(0)
     
@@ -63,8 +63,8 @@ class Filter:
         # will extract view of (cols, rows)
         A = cv2.warpAffine(self.filters[idx], M, (cols,rows))
         # A /= 255.0
-        self.writeAndShow(self.filters[idx],'filter.png')
-        self.writeAndShow(A, 'filter_'+str(idx)+'_tranformed.png')
+        # self.writeAndShow(self.filters[idx],'filter.png')
+        # self.writeAndShow(A, 'filter_'+str(idx)+'_tranformed.png')
 
         # alpha = self.alphas[idx]
 
@@ -85,7 +85,7 @@ class Filter:
         for r in range(rows):
             for c in range(cols):
                 opacity = A[r,c,3]/255.0
-                B[r,c] = (1 - opacity)*B[r,c] + A[r,c,:3]
+                B[r,c] = (1 - opacity)*B[r,c] + (opacity)*A[r,c,:3]
         self.writeAndShow(B,'filtered_'+'image'+'.png')
 
     def overlay(self, A, alpha, B):
@@ -183,7 +183,7 @@ class Filter:
 
 
         # 3 points & 1 alpha for 3.png # "Hat"
-        self.points.append([122, 130]) # Bottom Most
+        self.points.append([115, 10]) # Top Most
         self.points.append([1, 95]) # left most
         self.points.append([235, 93]) # right most
 
