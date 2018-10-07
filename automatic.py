@@ -2,7 +2,22 @@ import cv2
 import numpy as np
 import sys
 
+def dist(t1, t2):
+    (x1, y1) = t1
+    (x2, y2) = t2
+    return np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
+
 class Box:
+    def modify(self, box1, box2):
+        x = min([box1.x, box2.x])
+        y = min([box1.y, box2.y])
+        x2 = max([box2.x, box1.x])
+        y2 = max([box1.y, box2.y])
+        self.x, self.y, self.w, self.h = x,y,x2-x, y2-y
+        self.N = self.w*self.h
+        self.num_pixels = box1.num_pixels + box2.num_pixels
+        self.mean_x = (box1.num_pixels*box1.mean_x + box2.num_pixels*box2.mean_x)/(box1.num_pixels + box2.num_pixels)
+
     def __init__(self, image, x, y, w, h):
         self.image_shape = image.shape
         self.x = x
@@ -19,6 +34,7 @@ class Box:
                     mean_x += j
                     mean_y += i
                     num_pixels += 1
+        self.num_pixels = num_pixels
         if(num_pixels == 0):
             self.w = 0
             self.h = 0
@@ -41,7 +57,32 @@ class Box:
                 self.theta = 0
             else:
                 self.theta = 0.5*np.arctan(2*mean_1_1/(mean_2_0 - mean_0_2))
-    
+    def distance(self, box2):
+        # Taken from stackoverflow
+        (x1, y1, x1b, y1b) = (self.x, self.y, self.x + self.w, self.y + self.h)
+        (x2, y2, x2b, y2b) = (box2.x, box2.y, box2.x + box2.w, box2.y + box2.h)
+        left = x2b < x1
+        right = x1b < x2
+        bottom = y2b < y1
+        top = y1b < y2
+        if top and left:
+            return dist((x1, y1b), (x2b, y2))
+        elif left and bottom:
+            return dist((x1, y1), (x2b, y2b))
+        elif bottom and right:
+            return dist((x1b, y1), (x2, y2b))
+        elif right and top:
+            return dist((x1b, y1b), (x2, y2))
+        elif left:
+            return x1 - x2b
+        elif right:
+            return x2 - x1b
+        elif bottom:
+            return y1 - y2b
+        elif top:
+            return y2 - y1b
+        else:             # rectangles intersect
+            return 0
 
 def high_boost(image, i, j, w):
     return_value = 0
@@ -85,6 +126,8 @@ def separation(image, originalImage):
 
     for i, contour in enumerate(contours):
         x, y, w, h = cv2.boundingRect(contour)
+        if(w*h < 25):
+            continue
         boxes.append(Box(image, x, y, w, h))
         cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 1)
         cv2.rectangle(originalImage, (x, y), (x + w, y + h), (0, 255, 0), 1)
@@ -99,6 +142,22 @@ def separation(image, originalImage):
 #         r = 8 - 6 *(n - 1)/(n_max - 1)
 #         for box in boxes:
 #             if box.num_pixels == n:
+
+def merge_boxes(img, boxes):
+    num_boxes = len(boxes)
+    for i in range(num_boxes):
+        for j in range(i+1, num_boxes):
+            if boxes[i].distance(boxes[j])  == 0:
+                new_box = Box(img, 0,0,0,0)
+                new_box.modify(boxes[i],boxes[j])
+                modded = [new_box]
+                for k in range(0, num_boxes):
+                    if not(k == i) and not(k == j):
+                        modded.append(boxes[k])
+                return merge_boxes(img, modded)
+    return boxes
+
+
 
 def find_eyes(boxes):
     boxes.sort(key = lambda x: x.y)
@@ -129,22 +188,43 @@ def find_eyes(boxes):
     possible_eyes.sort(key = lambda box : box.mean_x)
     return possible_eyes
 
+def find_mouth(boxes, possible_eyes):
+    # print(possible_eyes)
+    distance_between_eyes = np.abs(possible_eyes[1].mean_x - possible_eyes[0].mean_x)
+    boxes = [box for box in boxes if (box.mean_y > possible_eyes[0].mean_y + distance_between_eyes/2)]
+    # Now ignore all the boxes of width < 50% of the distance between eyes
+    boxes = [box for box in boxes if ((box.w > distance_between_eyes/3) and box.w > box.h)]
+    boxes.sort(key = lambda box : box.y)
+    return boxes[0]
+
+def find_nostrils(boxes, eyes, mouth):
+    boxes = [box for box in boxes if box.mean_y > eyes[0].mean_y and box.mean_y < mouth.mean_y]
+    left_nostril_candidates = [box for box in boxes if box.mean_x < mouth.mean_x]
+    right_nostril_candidates = [box for box in boxes if box.mean_x > mouth.mean_x]
+    left_nostril_candidates.sort(key = lambda box : box.mean_x)
+    right_nostril_candidates.sort(key = lambda box : box.mean_x)
+    return [left_nostril_candidates[-1],right_nostril_candidates[0]]
+
 def getFeatures(image_path):
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     # print(image.shape)
     image = image.astype(np.float32)
     prep_image = preprocess(image)
     boxes = separation(prep_image, image)
+    # boxes = merge_boxes(prep_image, boxes)
     peyes = find_eyes(boxes)
+    # print(len(peyes))
+    mouth = find_mouth(boxes, peyes)
+    # nostrils = find_nostrils(boxes, peyes, mouth)
     # for e in peyes:
     #     print(e.mean_x, e.mean_y)
-    return peyes
+    return peyes+[mouth]#+nostrils
 
 
 
-path = 'images/portrait2.jpg'
+# path = 'images/ted_face.jpg'
 
-getFeatures(path)
+# getFeatures(path)
 
 # image = cv2.imread('images/portrait2.jpg',cv2.IMREAD_GRAYSCALE)
 # print(image.shape)
