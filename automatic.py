@@ -83,9 +83,9 @@ def separation(image):
     # print(len(contours))
     boxes = [] # list of the tuples 
     for i, contour in enumerate(contours):
-     x, y, w, h = cv2.boundingRect(contour)
-     boxes.append(Box(image, x, y, w, h))
-     cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 1)
+        x, y, w, h = cv2.boundingRect(contour)
+        boxes.append(Box(image, x, y, w, h))
+        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 1)
     cv2.imwrite('output3.png', img)
     return boxes
 
@@ -126,7 +126,7 @@ def find_eyes(boxes):
 
 def getFeatures(image_path):
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-    print(image.shape)
+    # print(image.shape)
     image = image.astype(np.float32)
     prep_image = preprocess(image)
     boxes = separation(prep_image)
