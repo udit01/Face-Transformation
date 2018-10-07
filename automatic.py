@@ -73,20 +73,25 @@ def preprocess(img):
                 intermediate_image[i,j] = 0
     # intermediate_image = cv2.medianBlur(img, 3)
     intermediate_image = cv2.medianBlur(intermediate_image,3)
-    cv2.imwrite('test.jpg',intermediate_image)
+    # cv2.imwrite('test.jpg',intermediate_image)
     return intermediate_image
 
-def separation(image):
+def separation(image, originalImage):
     img = image.copy()
     image = cv2.bitwise_not(image)
     _, contours, _ = cv2.findContours(image, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     # print(len(contours))
     boxes = [] # list of the tuples 
+
     for i, contour in enumerate(contours):
         x, y, w, h = cv2.boundingRect(contour)
         boxes.append(Box(image, x, y, w, h))
         cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 1)
-    cv2.imwrite('output3.png', img)
+        cv2.rectangle(originalImage, (x, y), (x + w, y + h), (0, 255, 0), 1)
+    
+
+    cv2.imwrite('intermediate_boxed.png', img)
+    cv2.imwrite('original_boxes.png', originalImage)
     return boxes
 
 # def merge(boxes, n_max):
@@ -129,7 +134,7 @@ def getFeatures(image_path):
     # print(image.shape)
     image = image.astype(np.float32)
     prep_image = preprocess(image)
-    boxes = separation(prep_image)
+    boxes = separation(prep_image, image)
     peyes = find_eyes(boxes)
     # for e in peyes:
     #     print(e.mean_x, e.mean_y)
