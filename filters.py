@@ -7,33 +7,7 @@ import itertools
 
 def read_transparent_png(filename):
     image_4channel = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
-    alpha_channel = image_4channel[:,:,3]
-    rgb_channels = image_4channel[:,:,:3]
-
-    # row,col,ch = rgb_channels.shape
-    # Black Background Image
-    black_background_image = np.zeros_like(rgb_channels, dtype=np.uint8) * 255
-
-    # for i in range(row):
-    #     for j in range(col):
-    #         rgb_channels[i][j] = np.array([-10, -10, -10])
-    
-    # Alpha factor
-    alpha_factor = alpha_channel[:,:,np.newaxis].astype(np.float32) / 255.0
-    alpha_factor = np.concatenate((alpha_factor,alpha_factor,alpha_factor), axis=2)
-
-    # Transparent Image Rendered on black Background
-    base = rgb_channels.astype(np.float32) * alpha_factor
-    black = black_background_image.astype(np.float32) * (1 - alpha_factor)
-
-    # row,col,ch = base.shape
-
-    # for i in range(row):
-    #     for j in range(col):
-    #         base[i][j] = np.add(base[i][j], np.array([1, 1, 1]))
-    
-    final_image = base + black
-    return final_image.astype(np.uint8)    
+    return image_4channel    
 
 
 class Filter:
@@ -57,7 +31,7 @@ class Filter:
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-        # self.printLists()
+        self.printLists()
 
         # self.constructFilteredImage(0)
     
@@ -89,9 +63,10 @@ class Filter:
         # will extract view of (cols, rows)
         A = cv2.warpAffine(self.filters[idx], M, (cols,rows))
         # A /= 255.0
+        self.writeAndShow(self.filters[idx],'filter.png')
         self.writeAndShow(A, 'filter_'+str(idx)+'_tranformed.png')
 
-        alpha = self.alphas[idx]
+        # alpha = self.alphas[idx]
 
         # background = cv2.imread('road.jpg')
         # overlay = cv2.imread('traffic sign.png')
@@ -102,11 +77,16 @@ class Filter:
         # A is foreground, B is background
         # smartly adding with alpha channel (modification in read_transparent func) ?
         # print(A[0][0])
-        output = self.overlay(A, alpha, B)
+        # output = self.overlay(A, alpha, B)
         # output = (A * alpha) + (B * (1-alpha))
         # output = (A * alpha) + (B)
         
-        self.writeAndShow(output, 'filter_'+str(idx)+'.png')
+        # self.writeAndShow(output, 'filter_'+str(idx)+'.png')
+        for r in range(rows):
+            for c in range(cols):
+                opacity = A[r,c,3]/255.0
+                B[r,c] = (1 - opacity)*B[r,c] + A[r,c,:3]
+        self.writeAndShow(B,'filtered_'+'image'+'.png')
 
     def overlay(self, A, alpha, B):
         output = np.zeros_like(B)
@@ -172,9 +152,9 @@ class Filter:
         # to  not? get row and col
 
         # 3 points & 1 alpha for 0.png "Specs"
-        self.points.append([2, 16]) # left eye center
-        self.points.append([124,70]) # right eye center 
-        self.points.append([240, 16]) # center of spects
+        self.points.append([52, 3]) # left eye-brow center
+        self.points.append([186, 2]) # right eye-brow center 
+        self.points.append([121, 28]) # center of eyes
 
         self.alphas.append(0.95)
         # have a map or number for opacity
@@ -195,17 +175,17 @@ class Filter:
 
 
         # 3 points & 1 alpha for 2.png "Mustache" 
-        self.points.append([328, 29]) # Leftmost
-        self.points.append([93, 24]) # Middle 
-        self.points.append([184,28]) # RightMost
+        self.points.append([94, 12]) # Below Nose
+        self.points.append([40, 63]) # lip left
+        self.points.append([146, 63]) # lip right
 
         self.alphas.append(0.99)
 
 
         # 3 points & 1 alpha for 3.png # "Hat"
-        self.points.append([117, 9]) # Top Center
-        self.points.append([2, 94]) # Leftmost
-        self.points.append([233, 94]) # RightMost
+        self.points.append([122, 130]) # Bottom Most
+        self.points.append([1, 95]) # left most
+        self.points.append([235, 93]) # right most
 
         self.alphas.append(0.99)
 
