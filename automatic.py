@@ -119,14 +119,31 @@ def find_eyes(boxes):
             distance_to_nearest_box.append(minimum)
         _, idx = min((val, idx) for (idx, val) in enumerate(distance_to_nearest_box))
         possible_eyes.pop(idx)
-    for eye in possible_eyes:
-        print(str(eye.mean_x) + " "+ str(eye.mean_y))
+    # for eye in possible_eyes:
+    #     print(str(eye.mean_x) + " "+ str(eye.mean_y))
     possible_eyes.sort(key = lambda box : box.mean_x)
     return possible_eyes
 
-image = cv2.imread('images/portrait2.jpg',cv2.IMREAD_GRAYSCALE)
-print(image.shape)
-image = image.astype(np.float32)
-prep_image = preprocess(image)
-boxes = separation(prep_image)
-find_eyes(boxes)
+def getFeatures(image_path):
+    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    print(image.shape)
+    image = image.astype(np.float32)
+    prep_image = preprocess(image)
+    boxes = separation(prep_image)
+    peyes = find_eyes(boxes)
+    # for e in peyes:
+    #     print(e.mean_x, e.mean_y)
+    return peyes
+
+
+
+path = 'images/portrait2.jpg'
+
+getFeatures(path)
+
+# image = cv2.imread('images/portrait2.jpg',cv2.IMREAD_GRAYSCALE)
+# print(image.shape)
+# image = image.astype(np.float32)
+# prep_image = preprocess(image)
+# boxes = separation(prep_image)
+# find_eyes(boxes)
